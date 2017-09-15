@@ -2,6 +2,7 @@ from src.common.yaml import Yaml
 from src.common.postgres import Postgres
 from src.common.path import Path
 from src.association_rules.transaction import Transaction
+from src.association_rules.fpgrowth import FPGrowth
 
 if __name__ == "__main__":
     path = Path(__file__)
@@ -13,19 +14,31 @@ if __name__ == "__main__":
 
     postgres = Postgres(host=config['source']['host'], port=config['source']['port'],
                         user=config['source']['user'], password=config['source']['password'])
+    print("Connecting to Postgres...")
     try:
         postgres.connect(dbname=config['source']['dbname'])
+        print("OK")
     except ConnectionRefusedError:
-        pass
+        postgres = None
 
-    records = postgres.query("SELECT DISTINCT " +
-                             str(config['source']['transaction_column']) + ", " + str(config['source']['item_column']) +
-                             " FROM " + str(config['source']['table']) +
-                             " ORDER BY " + str(config['source']['transaction_column']))
+    if postgres is not None:
+        print("Querying from Postgres...")
+        records = postgres.query("SELECT DISTINCT " +
+                                 str(config['source']['transaction_column']) + ", " +
+                                 str(config['source']['item_column']) +
+                                 " FROM " + str(config['source']['table']) +
+                                 " ORDER BY " + str(config['source']['transaction_column']))
+        print("OK")
+        print("Disconnecting from Postgres...")
+        postgres.disconnect()
+        print("OK")
+        print("Making transactions list...")
+        transactions = Transaction.list_maker(records)
+        print("OK")
+        print("Mining using FP-growth...")
+        fpgrowth = FPGrowth(transactions, 1, 2, 6)
+        print("OK")
+        print("Rules created:")
+        fpgrowth.pretty_print()
 
-    transactions = Transaction.list_maker(records)
 
-    for transaction in transactions:
-        print(transaction)
-
-    postgres.disconnect()
