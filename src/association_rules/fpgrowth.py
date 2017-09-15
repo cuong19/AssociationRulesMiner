@@ -12,7 +12,7 @@ class FPGrowth:
 
     def mine(self):
         self.results = fpgrowth(tracts=self.transactions, target="r", supp=self.support_threshold,
-                                zmin=self.min_set_size+1, zmax=self.max_set_size+1,report='ocl')
+                                zmin=self.min_set_size+1, zmax=self.max_set_size+1,report='scl')
         return self.results
 
     def pretty_print(self):
