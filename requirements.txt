@@ -1,3 +1,4 @@
 PyYAML
 psycopg2
 fim
+neo4j-driver

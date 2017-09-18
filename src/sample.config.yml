@@ -10,12 +10,9 @@ source:
   transaction_column: transaction_column
   item_column: item_column
 target:
-  db_system: postgres
+  db_system: neo4j
   host: 127.0.0.1
-  port: 5432
+  port: 7687
   user: user
   password: password
-  dbname: target_db
-  table: target_table
-  target_column: target_column
 ...

@@ -3,6 +3,7 @@ from src.common.postgres import Postgres
 from src.common.path import Path
 from src.association_rules.transaction import Transaction
 from src.association_rules.fpgrowth import FPGrowth
+from src.common.neo4j_driver import Neo4jDriver
 
 if __name__ == "__main__":
     path = Path(__file__)
@@ -20,6 +21,7 @@ if __name__ == "__main__":
         print("OK")
     except ConnectionRefusedError:
         postgres = None
+        print("Failed")
 
     if postgres is not None:
         print("Querying from Postgres...")
@@ -38,6 +40,53 @@ if __name__ == "__main__":
         print("Mining using FP-growth...")
         fpgrowth = FPGrowth(transactions, 0.1, 1, 5)
         print("OK")
-        print("Rules created:")
-        fpgrowth.pretty_print()
+        print("Rules created")
+        # fpgrowth.pretty_print()
         # print(fpgrowth.total_lift/fpgrowth.no_rules)
+
+        neo4j_driver = Neo4jDriver(host=config['target']['host'], port=config['target']['port'],
+                                   user=config['target']['user'], password=config['target']['password'])
+
+        print("Connecting to Neo4j database...")
+        try:
+            neo4j_driver.connect()
+            print("OK")
+        except ConnectionError:
+            neo4j_driver = None
+            print("Failed!")
+
+        # fpgrowth.pretty_print()
+
+        if neo4j_driver is not None:
+
+            print("Writing rules to Neo4j database...")
+            i = 0
+            for rule in fpgrowth.rules:
+                antecedents_str = ""
+                for antecedent in rule.antecedents:
+                    antecedents_str += "'" + str(antecedent) + "',"
+
+                antecedents_str = antecedents_str[:-1]
+
+                # Create a new set if not existed in database
+                neo4j_driver.query("MERGE (s:ItemSet {name: {name}, support: {support}})",
+                                   {"name": antecedents_str, "support": rule.support})
+                for antecedent in rule.antecedents:
+                    # Insert node :Item if not existed in database
+                    neo4j_driver.query("MERGE (i:Item {name: {name}})", {"name": str(antecedent)})
+                    # Insert relation between the node and the set
+                    neo4j_driver.query("MATCH (i:Item),(s:ItemSet) WHERE i.name = {iname} AND s.name = {sname} "
+                                       "MERGE (i)-[r:OCCURS_IN]->(s) RETURN r",
+                                       {"iname": str(antecedent), "sname": antecedents_str})
+                # Insert node :Item using consequent item if not existed in database
+                neo4j_driver.query("MERGE (i:Item {name: {name}})", {"name": str(rule.consequent)})
+
+                # Create the relation between the node and the set with attributes:
+                # Consequent, Confidence, Lift
+                neo4j_driver.query("MATCH (i:Item),(s:ItemSet) WHERE i.name = {iname} AND s.name = {sname} "
+                                   "MERGE (i)<-[r:OCCURS_WITH { confidence:{confidence}, lift:{lift} }]-(s) RETURN r",
+                                   {"iname": str(rule.consequent), "sname": antecedents_str,
+                                    "confidence": rule.confidence, "lift": rule.lift})
+                print("[" + antecedents_str + "] -> '" + str(rule.consequent) + "'")
+
+        neo4j_driver.disconnect()
