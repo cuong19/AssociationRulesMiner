@@ -36,9 +36,8 @@ if __name__ == "__main__":
         transactions = Transaction.list_maker(records)
         print("OK")
         print("Mining using FP-growth...")
-        fpgrowth = FPGrowth(transactions, 1, 2, 6)
+        fpgrowth = FPGrowth(transactions, 0.1, 1, 5)
         print("OK")
         print("Rules created:")
         fpgrowth.pretty_print()
-
-
+        # print(fpgrowth.total_lift/fpgrowth.no_rules)

@@ -10,7 +10,7 @@ class Transaction:
         for record in records:
             # print(record)
             if current_transaction.identifier != record[0]:
-                if current_transaction.items != []:
+                if current_transaction.items:
                     transactions.append(current_transaction.items)
                 current_transaction = Transaction(record[0])
                 # print(current_transaction.identifier)

@@ -13,8 +13,8 @@ class Postgres:
     def connect(self, dbname):
         try:
             self.conn = psycopg2.connect("dbname=" + str(dbname) +
-                                     " user=" + str(self.user) + " password=" + str(self.password) +
-                                     " host=" + str(self.host) + " port=" + str(self.port))
+                                         " user=" + str(self.user) + " password=" + str(self.password) +
+                                         " host=" + str(self.host) + " port=" + str(self.port))
             self.cur = self.conn.cursor()
         except psycopg2.OperationalError:
             print("Cannot connect to the database " + str(dbname) + " at " + str(self.host) + ":" + str(self.port))
