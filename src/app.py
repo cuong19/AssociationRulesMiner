@@ -41,6 +41,7 @@ if __name__ == "__main__":
         fpgrowth = FPGrowth(transactions, 0.1, 1, 5)
         print("OK")
         print("Rules created")
+        print(fpgrowth.no_rules)
         # fpgrowth.pretty_print()
         # print(fpgrowth.total_lift/fpgrowth.no_rules)
 
@@ -89,4 +90,4 @@ if __name__ == "__main__":
                                     "confidence": rule.confidence, "lift": rule.lift})
                 print("[" + antecedents_str + "] -> '" + str(rule.consequent) + "'")
 
-        neo4j_driver.disconnect()
+            neo4j_driver.disconnect()
