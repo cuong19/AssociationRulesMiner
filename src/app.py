@@ -58,6 +58,7 @@ if __name__ == "__main__":
 
         # fpgrowth.pretty_print()
 
+        i = 0
         if neo4j_driver is not None:
 
             print("Writing rules to Neo4j database...")
@@ -70,8 +71,8 @@ if __name__ == "__main__":
                 antecedents_str = antecedents_str[:-1]
 
                 # Create a new set if not existed in database
-                neo4j_driver.query("MERGE (s:ItemSet {name: {name}, support: {support}})",
-                                   {"name": antecedents_str, "support": rule.support})
+                neo4j_driver.query("MERGE (s:ItemSet {name: {name}})",
+                                   {"name": antecedents_str})
                 for antecedent in rule.antecedents:
                     # Insert node :Item if not existed in database
                     neo4j_driver.query("MERGE (i:Item {name: {name}})", {"name": str(antecedent)})
@@ -84,10 +85,15 @@ if __name__ == "__main__":
 
                 # Create the relation between the node and the set with attributes:
                 # Consequent, Confidence, Lift
-                neo4j_driver.query("MATCH (i:Item),(s:ItemSet) WHERE i.name = {iname} AND s.name = {sname} "
-                                   "MERGE (i)<-[r:OCCURS_WITH { confidence:{confidence}, lift:{lift} }]-(s) RETURN r",
+                neo4j_driver.query("MATCH (i:Item),(s:ItemSet) WHERE i.name = {iname} AND s.name = {sname}"
+                                   "MERGE (i)<-"
+                                   "[r:OCCURS_WITH { support:{support}, confidence:{confidence}, lift:{lift} }]"
+                                   "-(s)"
+                                   " RETURN r",
                                    {"iname": str(rule.consequent), "sname": antecedents_str,
-                                    "confidence": rule.confidence, "lift": rule.lift})
-                print("[" + antecedents_str + "] -> '" + str(rule.consequent) + "'")
+                                    "support": rule.support, "confidence": rule.confidence, "lift": rule.lift})
+                i += 1
+                print(str(i) + ". [" + antecedents_str + "] -> '" + str(rule.consequent) + "'")
 
             neo4j_driver.disconnect()
+        print("Number of rules: " + str(fpgrowth.no_rules))
