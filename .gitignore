@@ -159,5 +159,6 @@ fabric.properties
 # Application config file
 config.yml
 
-# Application custom file
-custom.py
+# Application custom file custom.py
+# Use the command
+# git update-index --assume-unchanged FILENAME
