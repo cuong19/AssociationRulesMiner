@@ -158,3 +158,6 @@ fabric.properties
 
 # Application config file
 config.yml
+
+# Application custom file
+custom.py
