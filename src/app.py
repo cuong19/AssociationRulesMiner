@@ -4,7 +4,6 @@ from src.common.path import Path
 from src.association_rules.transaction import Transaction
 from src.association_rules.fpgrowth import FPGrowth
 from src.common.neo4j_driver import Neo4jDriver
-from src.custom import CustomProcess
 
 if __name__ == "__main__":
     path = Path(__file__)
@@ -37,7 +36,6 @@ if __name__ == "__main__":
         print("OK")
         print("Making transactions list...")
         transactions = Transaction.list_maker(records)
-        CustomProcess.transaction_process(transactions)
         print("OK")
         print("Mining using FP-growth...")
         fpgrowth = FPGrowth(transactions, config['mining_var']['support'],
