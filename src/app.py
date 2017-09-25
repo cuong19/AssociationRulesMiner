@@ -38,62 +38,61 @@ if __name__ == "__main__":
         transactions = Transaction.list_maker(records)
         print("OK")
         print("Mining using FP-growth...")
-        fpgrowth = FPGrowth(transactions, 0.1, 1, 5)
+        fpgrowth = FPGrowth(transactions, config['mining_var']['support'],
+                            config['mining_var']['min_set'], config['mining_var']['max_set'])
         print("OK")
         print("Rules created")
         print(fpgrowth.no_rules)
-        # fpgrowth.pretty_print()
-        # print(fpgrowth.total_lift/fpgrowth.no_rules)
 
-        neo4j_driver = Neo4jDriver(host=config['target']['host'], port=config['target']['port'],
-                                   user=config['target']['user'], password=config['target']['password'])
+        if config['target']['use']:
+            neo4j_driver = Neo4jDriver(host=config['target']['host'], port=config['target']['port'],
+                                       user=config['target']['user'], password=config['target']['password'])
 
-        print("Connecting to Neo4j database...")
-        try:
-            neo4j_driver.connect()
-            print("OK")
-        except ConnectionError:
-            neo4j_driver = None
-            print("Failed!")
+            print("Connecting to Neo4j database...")
+            try:
+                neo4j_driver.connect()
+                print("OK")
+            except ConnectionError:
+                neo4j_driver = None
+                print("Failed!")
 
-        # fpgrowth.pretty_print()
-
-        i = 0
-        if neo4j_driver is not None:
-
-            print("Writing rules to Neo4j database...")
             i = 0
-            for rule in fpgrowth.rules:
-                antecedents_str = ""
-                for antecedent in rule.antecedents:
-                    antecedents_str += "'" + str(antecedent) + "',"
+            if neo4j_driver is not None:
 
-                antecedents_str = antecedents_str[:-1]
+                print("Writing rules to Neo4j database...")
+                i = 0
+                for rule in fpgrowth.rules:
+                    antecedents_str = ""
+                    for antecedent in rule.antecedents:
+                        antecedents_str += "'" + str(antecedent) + "',"
 
-                # Create a new set if not existed in database
-                neo4j_driver.query("MERGE (s:ItemSet {name: {name}})",
-                                   {"name": antecedents_str})
-                for antecedent in rule.antecedents:
-                    # Insert node :Item if not existed in database
-                    neo4j_driver.query("MERGE (i:Item {name: {name}})", {"name": str(antecedent)})
-                    # Insert relation between the node and the set
-                    neo4j_driver.query("MATCH (i:Item),(s:ItemSet) WHERE i.name = {iname} AND s.name = {sname} "
-                                       "MERGE (i)-[r:OCCURS_IN]->(s) RETURN r",
-                                       {"iname": str(antecedent), "sname": antecedents_str})
-                # Insert node :Item using consequent item if not existed in database
-                neo4j_driver.query("MERGE (i:Item {name: {name}})", {"name": str(rule.consequent)})
+                    antecedents_str = antecedents_str[:-1]
 
-                # Create the relation between the node and the set with attributes:
-                # Consequent, Confidence, Lift
-                neo4j_driver.query("MATCH (i:Item),(s:ItemSet) WHERE i.name = {iname} AND s.name = {sname}"
-                                   "MERGE (i)<-"
-                                   "[r:OCCURS_WITH { support:{support}, confidence:{confidence}, lift:{lift} }]"
-                                   "-(s)"
-                                   " RETURN r",
-                                   {"iname": str(rule.consequent), "sname": antecedents_str,
-                                    "support": rule.support, "confidence": rule.confidence, "lift": rule.lift})
-                i += 1
-                print(str(i) + ". [" + antecedents_str + "] -> '" + str(rule.consequent) + "'")
+                    # Create a new set if not existed in database
+                    neo4j_driver.query("MERGE (s:ItemSet {name: {name}})",
+                                       {"name": antecedents_str})
+                    for antecedent in rule.antecedents:
+                        # Insert node :Item if not existed in database
+                        neo4j_driver.query("MERGE (i:Item {name: {name}})", {"name": str(antecedent)})
+                        # Insert relation between the node and the set
+                        neo4j_driver.query("MATCH (i:Item),(s:ItemSet) WHERE i.name = {iname} AND s.name = {sname} "
+                                           "MERGE (i)-[r:OCCURS_IN]->(s) RETURN r",
+                                           {"iname": str(antecedent), "sname": antecedents_str})
+                    # Insert node :Item using consequent item if not existed in database
+                    neo4j_driver.query("MERGE (i:Item {name: {name}})", {"name": str(rule.consequent)})
 
-            neo4j_driver.disconnect()
-        print("Number of rules: " + str(fpgrowth.no_rules))
+                    # Create the relation between the node and the set with attributes:
+                    # Consequent, Confidence, Lift
+                    neo4j_driver.query("MATCH (i:Item),(s:ItemSet) WHERE i.name = {iname} AND s.name = {sname}"
+                                       "MERGE (i)<-"
+                                       "[r:OCCURS_WITH { support:{support}, confidence:{confidence}, lift:{lift} }]"
+                                       "-(s)"
+                                       " RETURN r",
+                                       {"iname": str(rule.consequent), "sname": antecedents_str,
+                                        "support": rule.support, "confidence": rule.confidence, "lift": rule.lift})
+                    i += 1
+                    print(str(i) + ". [" + antecedents_str + "] -> '" + str(rule.consequent) + "'")
+
+                neo4j_driver.disconnect()
+        else:
+            fpgrowth.pretty_print()

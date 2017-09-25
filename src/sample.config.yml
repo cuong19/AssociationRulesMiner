@@ -10,9 +10,14 @@ source:
   transaction_column: transaction_column
   item_column: item_column
 target:
+  use: yes # Only print to console if set to 'no'
   db_system: neo4j
   host: 127.0.0.1
   port: 7687
   user: user
   password: password
+mining_var:
+  support: 10 # percent
+  min_set: 1 # item(s)
+  max_set: 5 # item(s)
 ...
