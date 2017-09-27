@@ -18,11 +18,11 @@ target:
 mining_var:
   number_of_cases: no # support will be number of cases instead of percent if set to yes
   support: 10 # percent if use_number_of_case is set to no
-  min_set: 1 # item(s)
-  max_set: 5 # item(s)
+  min_set: 1 # item(s): The minimum amount of items in a set
+  max_set: 5 # item(s): The maximum amount of items in a set
 preferences:
-  print_rules_mine: yes
+  print_rules_mined: no # if you want to print rules mined to screen set to yes
   save_to_target:
-    rules_mine: no
-    test_set: yes
+    rules_mined: yes # if you don't want to save rules mined to Neo4j set to no
+    test_set: yes # if you don't want to save test set to Neo4j set to no
 ...

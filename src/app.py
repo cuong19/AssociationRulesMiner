@@ -201,9 +201,9 @@ if __name__ == "__main__":
             trans_to_learn, trans_to_test = split_transactions(trans)
             fpgrowth_mined = fpgrowth_mine(trans_to_learn, conf)
 
-            if conf['preferences']['save_to_target']['rules_mine']:
+            if conf['preferences']['save_to_target']['rules_mined']:
                 save_rules_to_neo4j(fpgrowth_mined, conf)
             if conf['preferences']['save_to_target']['test_set']:
                 save_test_set_to_neo4j(trans_to_test, conf)
-            if conf['preferences']['print_rules_mine']:
+            if conf['preferences']['print_rules_mined']:
                 fpgrowth_mined.pretty_print()

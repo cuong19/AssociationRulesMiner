@@ -12,7 +12,7 @@ class Neo4jDriver:
 
     def connect(self):
         self.driver = GraphDatabase.driver("bolt://" + str(self.host) + ":" + str(self.port),
-                                      auth=basic_auth(self.user, self.password))
+                                           auth=basic_auth(self.user, self.password))
         self.session = self.driver.session()
 
     def disconnect(self):
