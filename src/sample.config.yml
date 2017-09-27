@@ -19,7 +19,7 @@ mining_var:
   support: 10 # percent
   min_set: 1 # item(s)
   max_set: 5 # item(s)
-preference:
+preferences:
   print_rules_mine: yes
   save_to_target: no
 ...
