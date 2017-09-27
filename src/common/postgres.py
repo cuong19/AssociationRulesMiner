@@ -25,7 +25,10 @@ class Postgres:
         self.conn.close()
 
     def query(self, sql):
-        self.cur.execute(sql)
+        try:
+            self.cur.execute(sql)
+        except PostgresQueryError:
+            return None
         end_of_results = False
         records = []
         while end_of_results is False:
@@ -35,3 +38,11 @@ class Postgres:
             else:
                 end_of_results = True
         return records
+
+
+class PostgresError(Exception):
+    pass
+
+
+class PostgresQueryError(PostgresError):
+    pass
