@@ -16,10 +16,13 @@ target:
   user: user
   password: password
 mining_var:
-  support: 10 # percent
+  number_of_cases: no # support will be number of cases instead of percent if set to yes
+  support: 10 # percent if use_number_of_case is set to no
   min_set: 1 # item(s)
   max_set: 5 # item(s)
 preferences:
   print_rules_mine: yes
-  save_to_target: no
+  save_to_target:
+    rules_mine: no
+    test_set: yes
 ...

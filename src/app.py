@@ -6,6 +6,8 @@ from src.association_rules.fpgrowth import FPGrowth
 from src.common.neo4j_driver import Neo4jDriver
 from src.custom import CustomProcess
 
+import uuid
+
 
 def get_config(path, filename):
     """
@@ -79,7 +81,11 @@ def fpgrowth_mine(transactions, config):
     :return: The mined fpgrowth instance
     """
     print("Mining using FP-growth...")
-    fpgrowth = FPGrowth(transactions, config['mining_var']['support'],
+    if config['mining_var']['number_of_cases']:
+        support = - config['mining_var']['support']
+    else:
+        support = config['mining_var']['support']
+    fpgrowth = FPGrowth(transactions, support,
                         config['mining_var']['min_set'], config['mining_var']['max_set'])
     print("OK")
     print(str(fpgrowth.no_rules) + " rules created.")
@@ -122,7 +128,8 @@ def save_rules_to_neo4j(fpgrowth, config):
                 # Insert node :Item if not existed in database
                 neo4j_driver.query("MERGE (i:Item {name: {name}})", {"name": str(antecedent)})
                 # Insert relation between the node and the set
-                neo4j_driver.query("MATCH (i:Item),(s:ItemSet) WHERE i.name = {iname} AND s.name = {sname} "
+                neo4j_driver.query("MATCH (i:Item),(s:ItemSet) "
+                                   "WHERE i.name = {iname} AND s.name = {sname} "
                                    "MERGE (i)-[r:OCCURS_IN]->(s) RETURN r",
                                    {"iname": str(antecedent), "sname": antecedents_str})
             # Insert node :Item using consequent item if not existed in database
@@ -141,6 +148,44 @@ def save_rules_to_neo4j(fpgrowth, config):
             print(str(i) + ". [" + antecedents_str + "] -> '" + str(rule.consequent) + "'")
 
         neo4j_driver.disconnect()
+        print("OK")
+
+
+def save_test_set_to_neo4j(transactions_to_test, config):
+    neo4j_driver = Neo4jDriver(host=config['target']['host'], port=config['target']['port'],
+                               user=config['target']['user'], password=config['target']['password'])
+
+    print("Connecting to Neo4j database...")
+    try:
+        neo4j_driver.connect()
+        print("OK")
+    except ConnectionError:
+        print("Failed!")
+        return None
+
+    if neo4j_driver is not None:
+
+        print("Writing test sets to Neo4j database...")
+        i = 0
+        for transaction in transactions_to_test:
+            transactions_str = str(uuid.uuid4())
+
+            # Create a new set if not existed in database
+            neo4j_driver.query("CREATE (t:Transaction {uuid: {uuid}})",
+                               {"uuid": transactions_str})
+            for item in transaction:
+                # Insert node :Item if not existed in database
+                neo4j_driver.query("MERGE (i:Item {name: {name}})", {"name": str(item)})
+                # Insert relation between the node and the set
+                neo4j_driver.query("MATCH (i:Item),(t:Transaction) "
+                                   "WHERE i.name = {iname} AND t.uuid = {tuuid} "
+                                   "CREATE (i)-[r:OCCURS_IN]->(t) RETURN r",
+                                   {"iname": str(item), "tuuid": transactions_str})
+            i += 1
+            print(str(i) + ". " + str(transaction))
+
+        neo4j_driver.disconnect()
+        print("OK")
 
 
 if __name__ == "__main__":
@@ -156,7 +201,9 @@ if __name__ == "__main__":
             trans_to_learn, trans_to_test = split_transactions(trans)
             fpgrowth_mined = fpgrowth_mine(trans_to_learn, conf)
 
-            if conf['preferences']['save_to_target']:
+            if conf['preferences']['save_to_target']['rules_mine']:
                 save_rules_to_neo4j(fpgrowth_mined, conf)
+            if conf['preferences']['save_to_target']['test_set']:
+                save_test_set_to_neo4j(trans_to_test, conf)
             if conf['preferences']['print_rules_mine']:
                 fpgrowth_mined.pretty_print()
